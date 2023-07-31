@@ -1,0 +1,29 @@
+[2023-07-31T12:07:42.185-0700] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: testdag.task3_sql manual__2023-07-31T19:06:35.882562+00:00 [queued]>
+[2023-07-31T12:07:42.188-0700] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: testdag.task3_sql manual__2023-07-31T19:06:35.882562+00:00 [queued]>
+[2023-07-31T12:07:42.188-0700] {taskinstance.py:1308} INFO - Starting attempt 2 of 2
+[2023-07-31T12:07:42.192-0700] {taskinstance.py:1327} INFO - Executing <Task(SQLExecuteQueryOperator): task3_sql> on 2023-07-31 19:06:35.882562+00:00
+[2023-07-31T12:07:42.193-0700] {standard_task_runner.py:57} INFO - Started process 62737 to run task
+[2023-07-31T12:07:42.196-0700] {standard_task_runner.py:84} INFO - Running: ['airflow', 'tasks', 'run', 'testdag', 'task3_sql', 'manual__2023-07-31T19:06:35.882562+00:00', '--job-id', '18', '--raw', '--subdir', 'DAGS_FOLDER/testdag.py', '--cfg-path', '/var/folders/wq/wb1f6jvn7hs9kt8fvl1pjjf80000gn/T/tmpr874cjv0']
+[2023-07-31T12:07:42.196-0700] {standard_task_runner.py:85} INFO - Job 18: Subtask task3_sql
+[2023-07-31T12:07:42.210-0700] {task_command.py:410} INFO - Running <TaskInstance: testdag.task3_sql manual__2023-07-31T19:06:35.882562+00:00 [running]> on host sriharshas-macbook-pro.local
+[2023-07-31T12:07:42.230-0700] {taskinstance.py:1545} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='testdag' AIRFLOW_CTX_TASK_ID='task3_sql' AIRFLOW_CTX_EXECUTION_DATE='2023-07-31T19:06:35.882562+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='manual__2023-07-31T19:06:35.882562+00:00'
+[2023-07-31T12:07:42.231-0700] {sql.py:265} INFO - Executing: SELECT 1; SELECT * FROM public.product LIMIT 1;
+[2023-07-31T12:07:42.234-0700] {taskinstance.py:1824} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/Users/sriharshabasiri/Library/Python/3.9/lib/python/site-packages/airflow/providers/common/sql/operators/sql.py", line 266, in execute
+    hook = self.get_db_hook()
+  File "/Users/sriharshabasiri/Library/Python/3.9/lib/python/site-packages/airflow/providers/common/sql/operators/sql.py", line 181, in get_db_hook
+    return self._hook
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/functools.py", line 969, in __get__
+    val = self.func(instance)
+  File "/Users/sriharshabasiri/Library/Python/3.9/lib/python/site-packages/airflow/providers/common/sql/operators/sql.py", line 143, in _hook
+    conn = BaseHook.get_connection(self.conn_id)
+  File "/Users/sriharshabasiri/Library/Python/3.9/lib/python/site-packages/airflow/hooks/base.py", line 72, in get_connection
+    conn = Connection.get_connection_from_secrets(conn_id)
+  File "/Users/sriharshabasiri/Library/Python/3.9/lib/python/site-packages/airflow/models/connection.py", line 463, in get_connection_from_secrets
+    raise AirflowNotFoundException(f"The conn_id `{conn_id}` isn't defined")
+airflow.exceptions.AirflowNotFoundException: The conn_id `sriharshabasiri` isn't defined
+[2023-07-31T12:07:42.243-0700] {taskinstance.py:1345} INFO - Marking task as FAILED. dag_id=testdag, task_id=task3_sql, execution_date=20230731T190635, start_date=20230731T190742, end_date=20230731T190742
+[2023-07-31T12:07:42.246-0700] {standard_task_runner.py:104} ERROR - Failed to execute job 18 for task task3_sql (The conn_id `sriharshabasiri` isn't defined; 62737)
+[2023-07-31T12:07:42.258-0700] {local_task_job_runner.py:225} INFO - Task exited with return code 1
+[2023-07-31T12:07:42.267-0700] {taskinstance.py:2653} INFO - 0 downstream tasks scheduled from follow-on schedule check

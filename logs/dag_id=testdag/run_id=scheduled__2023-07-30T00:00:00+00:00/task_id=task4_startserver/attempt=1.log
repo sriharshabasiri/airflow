@@ -1,0 +1,16 @@
+[2023-07-31T10:48:15.652-0700] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: testdag.task4_startserver scheduled__2023-07-30T00:00:00+00:00 [queued]>
+[2023-07-31T10:48:15.654-0700] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: testdag.task4_startserver scheduled__2023-07-30T00:00:00+00:00 [queued]>
+[2023-07-31T10:48:15.654-0700] {taskinstance.py:1308} INFO - Starting attempt 1 of 2
+[2023-07-31T10:48:15.660-0700] {taskinstance.py:1327} INFO - Executing <Task(BashOperator): task4_startserver> on 2023-07-30 00:00:00+00:00
+[2023-07-31T10:48:15.662-0700] {standard_task_runner.py:57} INFO - Started process 54739 to run task
+[2023-07-31T10:48:15.665-0700] {standard_task_runner.py:84} INFO - Running: ['airflow', 'tasks', 'run', 'testdag', 'task4_startserver', 'scheduled__2023-07-30T00:00:00+00:00', '--job-id', '9', '--raw', '--subdir', 'DAGS_FOLDER/testdag.py', '--cfg-path', '/var/folders/wq/wb1f6jvn7hs9kt8fvl1pjjf80000gn/T/tmp46u3320l']
+[2023-07-31T10:48:15.665-0700] {standard_task_runner.py:85} INFO - Job 9: Subtask task4_startserver
+[2023-07-31T10:48:15.683-0700] {task_command.py:410} INFO - Running <TaskInstance: testdag.task4_startserver scheduled__2023-07-30T00:00:00+00:00 [running]> on host sriharshas-macbook-pro.local
+[2023-07-31T10:48:15.701-0700] {taskinstance.py:1545} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='testdag' AIRFLOW_CTX_TASK_ID='task4_startserver' AIRFLOW_CTX_EXECUTION_DATE='2023-07-30T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2023-07-30T00:00:00+00:00'
+[2023-07-31T10:48:15.702-0700] {subprocess.py:63} INFO - Tmp dir root location: /var/folders/wq/wb1f6jvn7hs9kt8fvl1pjjf80000gn/T
+[2023-07-31T10:48:15.703-0700] {subprocess.py:75} INFO - Running command: ['/bin/bash', '-c', 'echo "testing bashoperator for task4 - starting server" >> /Users/sriharshabasiri/airflow/example4.txt']
+[2023-07-31T10:48:15.706-0700] {subprocess.py:86} INFO - Output:
+[2023-07-31T10:48:15.709-0700] {subprocess.py:97} INFO - Command exited with return code 0
+[2023-07-31T10:48:15.716-0700] {taskinstance.py:1345} INFO - Marking task as SUCCESS. dag_id=testdag, task_id=task4_startserver, execution_date=20230730T000000, start_date=20230731T174815, end_date=20230731T174815
+[2023-07-31T10:48:15.726-0700] {local_task_job_runner.py:225} INFO - Task exited with return code 0
+[2023-07-31T10:48:15.732-0700] {taskinstance.py:2653} INFO - 0 downstream tasks scheduled from follow-on schedule check
