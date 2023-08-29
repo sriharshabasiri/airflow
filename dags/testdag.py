@@ -54,4 +54,49 @@ task4 = BashOperator(task_id='task4_startserver',
                      dag=dag
                      )
 
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2023, 1, 1),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+dag = DAG(
+    'github_to_staging',
+    default_args=default_args,
+    schedule_interval=timedelta(days=1),
+    catchup=False,
+)
+
+# Define the commands to execute in the BashOperator
+checkout_code = """
+    git clone https://github.com/your-username/your-repo.git /tmp/checkout_dir
+"""
+
+copy_to_staging = """
+    rsync -av /tmp/checkout_dir/ staging_server:/path/to/staging/directory/
+"""
+
+# Define the tasks
+checkout_task = BashOperator(
+    task_id='checkout_code',
+    bash_command=checkout_code,
+    dag=dag,
+)
+
+copy_task = BashOperator(
+    task_id='copy_to_staging',
+    bash_command=copy_to_staging,
+    dag=dag,
+)
+
+# Set task dependencies
+checkout_task >> copy_task
+
+
 task1 >> task2 >> task3 >> task4
