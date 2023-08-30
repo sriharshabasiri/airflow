@@ -100,3 +100,51 @@ checkout_task >> copy_task
 
 
 task1 >> task2 >> task3 >> task4
+
+
+
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2023, 1, 1),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+dag = DAG(
+    'backup_modified_and_rsync',
+    default_args=default_args,
+    schedule_interval=timedelta(days=1),
+    catchup=False,
+)
+
+# Define the paths for backup and staging directories
+backup_root_dir = "/tmp/backup_dir/{{ ds_nodash }}"
+staging_dir = "/path/to/staging/directory"
+checkout_dir = "/tmp/checkout_dir"
+
+# Define the rsync command with the --backup and --backup-dir options
+rsync_files = """
+    rsync -av --backup --backup-dir={backup_root_dir}/{staging_relative_path} {checkout_dir}/{staging_relative_path}/ {staging_dir}/{staging_relative_path}/
+""".format(
+    backup_root_dir=backup_root_dir,
+    checkout_dir=checkout_dir,
+    staging_dir=staging_dir,
+    staging_relative_path="{{ item }}",
+)
+
+# Define the backup task for each subdirectory in the staging directory
+backup_task = BashOperator(
+    task_id='backup_files',
+    bash_command=' '.join([rsync_files]),
+    params={"item": "{{ ds_nodash }}"},
+    dag=dag,
+)
+
+# Set task dependencies
+backup_task
+
