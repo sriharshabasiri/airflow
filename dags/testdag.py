@@ -145,6 +145,107 @@ backup_task = BashOperator(
     dag=dag,
 )
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+from airflow import DAG
+from airflow.providers.ssh.operators.ssh_operator import SSHOperator
+from airflow.operators.python_operator import PythonOperator
+from datetime import datetime
+import os
+import tarfile
+import shutil
+import subprocess
+
+def copy_remote_directory():
+    # SSHOperator to copy the remote directory to a local directory
+    ssh_copy_command = """
+    scp -r user@remote_server:/path/to/remote_directory /path/to/local_directory/{{ ds_nodash }}
+    """
+    return SSHOperator(
+        task_id='copy_remote_directory',
+        ssh_conn_id='your_ssh_connection_id',  # Configure your SSH connection in Airflow
+        command=ssh_copy_command,
+        dag=dag,
+    )
+
+def scan_and_extract_tar_files(ds, **kwargs):
+    local_directory = f"/path/to/local_directory/{ds}"
+    for root, _, files in os.walk(local_directory):
+        for filename in files:
+            if filename.endswith('.tar.gz'):
+                tar_file_path = os.path.join(root, filename)
+                extract_path = os.path.join(root, filename[:-7])  # Remove .tar.gz extension
+                with tarfile.open(tar_file_path, 'r:gz') as tar:
+                    tar.extractall(extract_path)
+                # Git commit logic
+                git_commit(extract_path)
+
+def git_commit(directory):
+    # Change to the directory containing extracted files
+    os.chdir(directory)
+
+    # Initialize a Git repository if it doesn't exist
+    if not os.path.exists('.git'):
+        subprocess.run(['git', 'init'])
+
+    # Add all files to the Git repository
+    subprocess.run(['git', 'add', '.'])
+
+    # Commit the changes
+    subprocess.run(['git', 'commit', '-m', 'Commit extracted files'])
+
+dag = DAG(
+    'extract_and_commit_files',
+    start_date=datetime(2023, 1, 1),
+    schedule_interval=None,
+    catchup=False,
+)
+
+copy_task = copy_remote_directory()
+
+scan_and_extract_task = PythonOperator(
+    task_id='scan_and_extract_tar_files',
+    provide_context=True,
+    python_callable=scan_and_extract_tar_files,
+    dag=dag,
+)
+
+copy_task >> scan_and_extract_task
+
+
 # Set task dependencies
 backup_task
+
+
+
+
+def scan_and_extract_tar_files(ds, **kwargs):
+    local_directory = f"/path/to/local_directory/{ds}"
+    for root, _, files in os.walk(local_directory):
+        for filename in files:
+            if filename.endswith('.tar.gz'):
+                tar_file_path = os.path.join(root, filename)
+                extract_path = os.path.join(root, filename[:-7])  # Remove .tar.gz extension
+                with tarfile.open(tar_file_path, 'r:gz') as tar:
+                    tar.extractall(extract_path)
+                # Check if the extracted directory structure is 'prodbase/exe'
+                if is_prodbase_exe_structure(extract_path):
+                    # Git commit logic
+                    git_commit(extract_path)
+
+def is_prodbase_exe_structure(directory):
+    # Check if the directory structure is 'prodbase/exe'
+    return os.path.exists(os.path.join(directory, 'prodbase', 'exe'))
+
 
