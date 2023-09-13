@@ -249,3 +249,11 @@ def is_prodbase_exe_structure(directory):
     return os.path.exists(os.path.join(directory, 'prodbase', 'exe'))
 
 
+def find_and_extract_runtime_tar(extract_path):
+    for root, _, files in os.walk(extract_path):
+        for filename in files:
+            if filename == 'runtime.tar':
+                runtime_tar_path = os.path.join(root, filename)
+                with tarfile.open(runtime_tar_path, 'r') as runtime_tar:
+                    runtime_tar.extractall(root)
+
