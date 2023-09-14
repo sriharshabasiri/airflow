@@ -257,3 +257,45 @@ def find_and_extract_runtime_tar(extract_path):
                 with tarfile.open(runtime_tar_path, 'r') as runtime_tar:
                     runtime_tar.extractall(root)
 
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+from datetime import datetime
+
+import os
+import shutil
+
+# Define your custom Python function to copy directories starting with a number
+def copy_numeric_directories():
+    source_dir = "/path/to/source/directory"  # Replace with your source directory path
+    destination_dir = "/path/to/destination/directory"  # Replace with your destination directory path
+
+    for item in os.listdir(source_dir):
+        if os.path.isdir(os.path.join(source_dir, item)) and item[0].isdigit():
+            source = os.path.join(source_dir, item)
+            destination = os.path.join(destination_dir, item)
+            try:
+                shutil.copytree(source, destination)
+                print(f"Copied directory: {source} to {destination}")
+            except Exception as e:
+                print(f"Error copying directory: {e}")
+
+# Define your DAG
+dag = DAG(
+    'copy_numeric_directories',
+    start_date=datetime(2023, 1, 1),  # You can set the start date accordingly
+    schedule_interval=None,  # You can set the schedule interval as needed
+    catchup=False,
+)
+
+# Create a PythonOperator task to execute the copy_numeric_directories function
+copy_task = PythonOperator(
+    task_id='copy_numeric_directories_task',
+    python_callable=copy_numeric_directories,
+    dag=dag,
+)
+
+# Define task dependencies if needed
+# For example, you can add downstream tasks to process the copied directories
+
+if __name__ == "__main__":
+    dag.cli()
