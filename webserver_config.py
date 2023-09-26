@@ -1,3 +1,19 @@
+SET SERVEROUTPUT ON
+
+DECLARE
+  v_blob_data BLOB;
+  v_text_data VARCHAR2(32767); -- Adjust the size based on your data
+BEGIN
+  SELECT blob_data INTO v_blob_data
+  FROM my_table
+  WHERE some_condition;
+
+  DBMS_LOB.READ(v_blob_data, DBMS_LOB.GETLENGTH(v_blob_data), 1, v_text_data);
+  DBMS_OUTPUT.PUT_LINE(v_text_data);
+END;
+/
+
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
