@@ -299,3 +299,48 @@ copy_task = PythonOperator(
 
 if __name__ == "__main__":
     dag.cli()
+
+
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from datetime import datetime
+import os
+import shutil
+
+# Define your DAG
+dag = DAG(
+    'copy_prodbase_exe_files',
+    start_date=datetime(2023, 9, 7),
+    schedule_interval=None,  # Set your desired schedule interval
+)
+
+# Define a Python script to copy files
+copy_script = """
+source_parent_dir="/path/to/source_parent_directory"
+destination_dir="/path/to/destination_directory"
+
+# Loop through subdirectories under the source directory
+for subdir in os.listdir(source_parent_dir):
+    source_dir = os.path.join(source_parent_dir, subdir, "prodbase/exe")
+    # Check if the source directory exists
+    if os.path.exists(source_dir):
+        # Loop through files in the source directory
+        for filename in os.listdir(source_dir):
+            source_file = os.path.join(source_dir, filename)
+            # Create the destination directory if it doesn't exist
+            os.makedirs(os.path.dirname(os.path.join(destination_dir, source_file)), exist_ok=True)
+            destination_file = os.path.join(destination_dir, source_file)
+            # Copy the file to the destination directory
+            shutil.copy2(source_file, destination_file)
+"""
+
+# Define a BashOperator to execute the Python script
+copy_task = BashOperator(
+    task_id='copy_prodbase_exe_files_task',
+    bash_command=copy_script,
+    dag=dag,
+)
+
+# Optional: Define task dependencies
+# You can set up other dependencies as needed
+# copy_task >> ...
