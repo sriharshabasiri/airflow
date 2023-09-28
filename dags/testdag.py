@@ -300,46 +300,25 @@ copy_task = PythonOperator(
 if __name__ == "__main__":
     dag.cli()
 
-from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from datetime import datetime
-import os
-import shutil
+def copy_exe_contents(parent_dir, destination_dir):
+    # Iterate through the parent directory and its subdirectories
+    for root, dirs, files in os.walk(parent_dir):
+        for dir_name in dirs:
+            if dir_name == "prodbase":
+                # Check if there is an "exe" directory under "prodbase"
+                exe_dir = os.path.join(root, dir_name, "exe")
+                if os.path.exists(exe_dir):
+                    # Copy the contents of "exe" to the destination directory
+                    for item in os.listdir(exe_dir):
+                        source = os.path.join(exe_dir, item)
+                        destination = os.path.join(destination_dir, item)
+                        if os.path.isdir(source):
+                            shutil.copytree(source, destination)
+                        else:
+                            shutil.copy2(source, destination)
 
-# Define a Python function to copy files
-def copy_prodbase_exe_files():
-    source_parent_dir = "/path/to/source_parent_directory"
-    destination_dir = "/path/to/destination_directory"
-
-    # Loop through subdirectories under the source directory
-    for subdir in os.listdir(source_parent_dir):
-        source_dir = os.path.join(source_parent_dir, subdir, "prodbase/exe")
-        # Check if the source directory exists
-        if os.path.exists(source_dir):
-            # Loop through files in the source directory
-            for filename in os.listdir(source_dir):
-                source_file = os.path.join(source_dir, filename)
-                # Create the destination directory if it doesn't exist
-                os.makedirs(os.path.dirname(os.path.join(destination_dir, source_file)), exist_ok=True)
-                destination_file = os.path.join(destination_dir, source_file)
-                # Copy the file to the destination directory
-                shutil.copy2(source_file, destination_file)
-
-# Define your DAG
-dag = DAG(
-    'copy_prodbase_exe_files',
-    start_date=datetime(2023, 9, 7),
-    schedule_interval=None,  # Set your desired schedule interval
-)
-
-# Define a PythonOperator to execute the copy_prodbase_exe_files function
-copy_task = PythonOperator(
-    task_id='copy_prodbase_exe_files_task',
-    python_callable=copy_prodbase_exe_files,
-    dag=dag,
-)
-
-# Optional: Define task dependencies
-# You can set up other dependencies as needed
-# copy_task >> ...
+# Example usage:
+parent_directory = "/path/to/parent_directory"
+destination_directory = "/path/to/destination_directory"
+copy_exe_contents(parent_directory, destination_directory)
 
