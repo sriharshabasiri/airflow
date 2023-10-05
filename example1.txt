@@ -13,3 +13,57 @@ testing bashoperator for task1 - stopping server
 testing bashoperator for task1 - stopping server
 testing bashoperator for task1 - stopping server
 testing bashoperator for task1 - stopping server
+
+
+from airflow import DAG
+from airflow.providers.http.operators.http import SimpleHttpOperator
+from datetime import datetime
+import json
+
+# Define default_args and DAG configuration
+default_args = {
+    'owner': 'your_name',
+    'start_date': datetime(2023, 1, 1),
+    'retries': 1,  # Number of retries on task failure
+    'retry_delay': timedelta(minutes=5),  # Delay between retries
+}
+
+dag = DAG(
+    'servicenow_http_call',
+    default_args=default_args,
+    description='HTTP call to ServiceNow',
+    schedule_interval=None,  # Set your desired schedule interval or None
+    catchup=False,  # Set to False if you don't want historical DAG runs
+)
+
+# Define the ServiceNow URL and request payload
+servicenow_url = 'https://your-servicenow-instance-url.com/api/endpoint'
+payload = {
+    "sysparm_quantity": "1",
+    "variables": {
+        "CHG_Ticket": "",
+        "query": "",
+        "infra_app": "OpenJDK_8",
+        "host": "vcld027140",
+        "env": "preprod",
+        "rhel7": ""
+    }
+}
+
+# Create an HTTP call task
+http_task = SimpleHttpOperator(
+    task_id='http_call_to_servicenow',
+    method='POST',
+    http_conn_id='your_http_conn_id',  # Define your HTTP connection ID in Airflow
+    endpoint=servicenow_url,
+    headers={"Content-Type": "application/json"},
+    data=json.dumps(payload),
+    xcom_push=True,  # Push the response to XCom for potential use in subsequent tasks
+    dag=dag,
+)
+
+# Define task dependencies if needed
+# Example: http_task >> other_task
+
+if __name__ == "__main__":
+    dag.cli()
