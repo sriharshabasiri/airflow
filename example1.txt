@@ -1,4 +1,128 @@
 from airflow import DAG
+from airflow.contrib.operators.ssh_operator import SSHOperator
+from datetime import datetime
+
+# Define default_args for the DAG
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime(2023, 10, 3),
+    'retries': 1,
+}
+
+# Create a DAG instance
+dag = DAG(
+    'environment_rebuild_ssh',
+    default_args=default_args,
+    schedule_interval=None,  # Set to None for manual triggering
+    catchup=False,
+)
+
+# SSH connection ID for remote target server
+target_server_conn_id = 'ssh_target_server'
+
+# Task 1: Backup target JBoss setup
+backup_target_jboss_command = """
+    cp -r /opt/finacle/dfsapp /central/envrebuild/targetbackup/FE &&
+    cp -r /opt/jboss/v7.0 /central/envrebuild/targetbackup/JBoss_Host &&
+    cp -r /etc/b2k/DESR1064/conf /central/envrebuild/targetbackup/etcb2kFE
+"""
+
+backup_target_jboss = SSHOperator(
+    task_id='backup_target_jboss',
+    ssh_conn_id=target_server_conn_id,
+    command=backup_target_jboss_command,
+    dag=dag,
+)
+
+# Task 2: Copy source setup to staging
+copy_source_to_staging_command = """
+    cp -I /opt/finacle/dfsapp /central/envrebuild/FE &&
+    cp -r /opt/jboss/v7.0 /central/envrebuild/JBoss_Host &&
+    cp -r /etc/b2k/DESR1064/conf /central/envrebuild/etcb2kFE
+"""
+
+copy_source_to_staging = SSHOperator(
+    task_id='copy_source_to_staging',
+    ssh_conn_id=target_server_conn_id,
+    command=copy_source_to_staging_command,
+    dag=dag,
+)
+
+# Task 3: Find and delete backup tars on remote staging server
+find_and_delete_backups_command = """
+    find /central/envrebuild/FE -type f \( -name "*.tar" -o -name "*-tar.gz" \) -delete &&
+    find /central/envrebuild/JBoss_Host -type f \( -name "*.tar" -o -name "*.tar.gz" \) -delete &&
+    find /central/envrebuild/etcb2kFE -type f \( -name "*.tar" -o -name "*.tar.gz" \) -delete
+"""
+
+find_and_delete_backups = SSHOperator(
+    task_id='find_and_delete_backups',
+    ssh_conn_id=target_server_conn_id,
+    command=find_and_delete_backups_command,
+    dag=dag,
+)
+
+# Task 4: Delete logs on remote staging server
+delete_logs_command = "du -sm * | sort -n | tail -1"
+
+delete_logs = SSHOperator(
+    task_id='delete_logs',
+    ssh_conn_id=target_server_conn_id,
+    command=delete_logs_command,
+    dag=dag,
+)
+
+# Task 5: Create tar files on remote staging server
+create_tar_files_command = """
+    tar -cvf /central/envrebuild/FE.tar /central/envrebuild/FE &&
+    tar -cvf /central/envrebuild/JBoss_Host.tar /central/envrebuild/JBoss_Host &&
+    tar -cvf /central/envrebuild/etcb2kFE.tar /central/envrebuild/etcb2kFE
+"""
+
+create_tar_files = SSHOperator(
+    task_id='create_tar_files',
+    ssh_conn_id=target_server_conn_id,
+    command=create_tar_files_command,
+    dag=dag,
+)
+
+# Task 6: Copy to remote target server from remote staging server
+copy_to_target_server_command = """
+    scp /central/envrebuild/FE.tar corebank@targetserver:/opt/finacle &&
+    scp /central/envrebuild/JBoss_Host.tar corebank@targetserver:/opt/jboss &&
+    scp /central/envrebuild/etcb2kFE.tar corebank@targetserver:/etc/b2k/DFSR1064/conf
+"""
+
+copy_to_target_server = SSHOperator(
+    task_id='copy_to_target_server',
+    ssh_conn_id=target_server_conn_id,
+    command=copy_to_target_server_command,
+    dag=dag,
+)
+
+# Task 7: Replace hostnames on remote target server
+replace_hostnames_command = """
+    sed -i "s/source_uc_hostname/target_uc_hostname/g" $files &&
+    sed -i "s/source_uc_hostname/target_uc_hostname/g" $files &&
+    sed -i "s/d_finacle_dev01/d_finacle_dev02/g" $files &&
+    echo "Processed $files"
+"""
+
+replace_hostnames = SSHOperator(
+    task_id='replace_hostnames',
+    ssh_conn_id=target_server_conn_id,
+    command=replace_hostnames_command,
+    dag=dag,
+)
+
+# Define task dependencies
+backup_target_jboss >> copy_source_to_staging >> find_and_delete_backups >> delete_logs
+delete_logs >> create_tar_files >> copy_to_target_server >> replace_hostnames
+
+
+
+
+from airflow import DAG
 from airflow.providers.ssh.operators.ssh import SSHOperator
 from airflow.utils.dates import days_ago
 from datetime import timedelta
