@@ -3,3 +3,109 @@ testing bashoperator for task4 - starting server
 testing bashoperator for task4 - starting server
 testing bashoperator for task4 - starting server
 testing bashoperator for task4 - starting server
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Oracle Account Status Checker</title>
+</head>
+<body>
+    <h1>Check Oracle Account Status</h1>
+    <form id="inputForm">
+        <label for="environmentName">Environment Name:</label>
+        <input type="text" id="environmentName" required><br>
+
+        <label for="account">Account:</label>
+        <input type="text" id="account" required><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" required><br>
+
+        <button type="button" id="checkButton">Check Status</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById("checkButton").addEventListener("click", function () {
+            const environmentName = document.getElementById("environmentName").value;
+            const account = document.getElementById("account").value;
+            const password = document.getElementById("password").value;
+
+            // Send the data to the Python backend for processing
+            fetch("/check_account_status", {
+                method: "POST",
+                body: JSON.stringify({ environmentName, account, password }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("result").innerText = data.message;
+                })
+                .catch(error => console.error(error));
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+from flask import Flask, request, jsonify
+import cx_Oracle
+import subprocess
+
+app = Flask(__name)
+
+# Define your Oracle database connection information
+db_user = "your_db_user"
+db_password = "your_db_password"
+db_tns = "your_db_tns"  # e.g., "hostname:port/service_name"
+
+def check_oracle_account_status(environment_name, account):
+    # Create a connection to the Oracle database
+    connection = cx_Oracle.connect(db_user, db_password, db_tns)
+    
+    # Check the account status
+    cursor = connection.cursor()
+    cursor.execute("SELECT ACCOUNT_STATUS FROM DBA_USERS WHERE USERNAME = :account", account=account)
+    result = cursor.fetchone()
+    
+    if result:
+        account_status = result[0]
+        cursor.close()
+        connection.close()
+
+        return account_status
+    else:
+        cursor.close()
+        connection.close()
+        return "Account not found"
+
+@app.route("/check_account_status", methods=["POST"])
+def check_account_status():
+    data = request.get_json()
+    environment_name = data["environmentName"]
+    account = data["account"]
+    password = data["password"]
+
+    account_status = check_oracle_account_status(environment_name, account)
+
+    # Example: if the account is locked or expired, run a shell script
+    if account_status == "LOCKED" or account_status == "EXPIRED":
+        try:
+            subprocess.run(["sh", "update_password.sh", account, password], check=True)
+            message = "Password updated successfully."
+        except subprocess.CalledProcessError:
+            message = "Failed to update password."
+    else:
+        message = "Account is active."
+
+    return jsonify({"message": message})
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
