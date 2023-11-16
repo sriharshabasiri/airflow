@@ -1,27 +1,19 @@
-tart Zookeeper Server
+from kafka import KafkaProducer
+import json
+from data import get_registered_user
+import time
 
-sh bin/zookeeper-server-start.sh config/zookeeper.properties
 
-Start Kafka Server / Broker
+def json_serializer(data):
+    return json.dumps(data).encode("utf-8")
 
-sh bin/kafka-server-start.sh config/server.properties
 
-Create topic
+producer = KafkaProducer(bootstrap_servers=['192.168.0.10:9092'],
+                         value_serializer=json_serializer)
 
-sh bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic NewTopic --partitions 3 --replication-factor 1
-
-list out all topic names
-
-sh bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
-
-Describe topics
-
-sh bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic NewTopic
-
-Produce message
-
-sh bin/kafka-console-producer.sh --broker-list localhost:9092 --topic NewTopic
-
-consume message
-
-sh bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic NewTopic --from-beginning
+if __name__ == "__main__":
+    while 1 == 1:
+        registered_user = get_registered_user()
+        print(registered_user)
+        producer.send("registered_user", registered_user)
+        time.sleep(4)
